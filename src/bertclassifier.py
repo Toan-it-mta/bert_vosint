@@ -7,7 +7,6 @@ from torch import nn
 class BertClassifier(nn.Module):
 
     def __init__(self, bert_model, hidden_size, num_classes, batch_size, dropout=0.5):
-
         super(BertClassifier, self).__init__()
         self.bert_model = bert_model
         self.dropout = nn.Dropout(dropout)
@@ -21,7 +20,6 @@ class BertClassifier(nn.Module):
         sentence_embeddings = []
         sentences_ids = sentences_encode[0]
         sentences_mask = sentences_encode[1]
-        print('oke')
         for sentence_id, sentence_mask in zip(sentences_ids, sentences_mask):
             _, sentence_pooled_output = self.bert_model(
                 input_ids=sentence_id, attention_mask=sentence_mask, return_dict=False)
