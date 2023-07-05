@@ -29,7 +29,7 @@ def get_args():
     parser.add_argument("--num_class", type=str, default=3)
     parser.add_argument("--test_interval", type=int, default=1, help="Number of epoches between testing phases")
     parser.add_argument("--saved_path", type=str, default="./models")
-    parser.add_argument("--max_token_length",type=int,default=60)
+    parser.add_argument("--max_token_length",type=int,default=100)
     parser.add_argument("--max_sent_length",type=int,default=70)
     args = parser.parse_args()
     return args
@@ -70,13 +70,13 @@ def train_model(opt):
     if torch.cuda.is_available():
         model.cuda()
     model.train()
-    train = Dataset(tokenizer, train_dataset[:8], label_mapping, opt.max_token_length, opt.max_sent_length)
+    train = Dataset(tokenizer, train_dataset[:32], label_mapping, opt.max_token_length, opt.max_sent_length)
     train_dataloader = torch.utils.data.DataLoader(
         train, batch_size=batch_size, pin_memory=True, shuffle=True, drop_last= True)
 
-    test = Dataset(tokenizer, test_dataset[:8], label_mapping, opt.max_token_length, opt.max_sent_length)
+    test = Dataset(tokenizer, test_dataset[:16], label_mapping, opt.max_token_length, opt.max_sent_length)
     test_dataloader = torch.utils.data.DataLoader(
-        test, batch_size=batch_size, drop_last= True)
+        test, batch_size=batch_size)
 
     num_iter_per_epoch = len(train_dataset)
     for epoch in range(opt.num_epoches):

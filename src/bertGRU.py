@@ -15,6 +15,7 @@ class BertClassifier(nn.Module):
         self.sent_hidden_size = hidden_size
         self.batch_size = batch_size
         self._init_hidden_state()
+        self.relu = nn.ReLU()
 
     def _init_hidden_state(self, last_batch_size=None):
         if last_batch_size:
@@ -27,9 +28,16 @@ class BertClassifier(nn.Module):
       
     def forward(self, input):
         batch_embedding = []
-        for document_ids in input:
-            document_pooled_output = self.bert_model(input_ids=document_ids)
+        batch_ids = input['input_ids']
+        batch_mask = input['attention_mask']
+        for i in range(0,batch_ids.size(0)):
+            document_ids = batch_ids[i]
+            document_mask = batch_mask[i]
+            document_pooled_output = self.bert_model(document_ids,document_mask)
             document_pooled_output = torch.mean(document_pooled_output.last_hidden_state, dim=1)
+            document_pooled_output = self.relu(document_pooled_output)
+            document_pooled_output = self.dropout(document_pooled_output)
+
             # document_pooled_output = document_pooled_output['pooler_output'].squeeze()
             batch_embedding.append(document_pooled_output)
         batch_embedding = torch.stack(batch_embedding)
