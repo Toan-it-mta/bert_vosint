@@ -8,27 +8,29 @@ from src.utils import get_evaluation
 import numpy as np
 import argparse
 import os
+import warnings 
+warnings.filterwarnings("ignore")
 
 def get_args():
     parser = argparse.ArgumentParser(
         """Implementation of the model described in the paper: Hierarchical Attention Networks for Document Classification""")
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--bert_name", type=str, default="distilbert-base-uncased")
-    parser.add_argument("--num_epoches", type=int, default=2)
-    parser.add_argument("--lr", type=float, default=0.01)
+    parser.add_argument("--num_epoches", type=int, default=10)
+    parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--momentum", type=float, default=0.9)
     parser.add_argument("--gru_hiddent_size", type=int, default=150)
     parser.add_argument("--es_min_delta", type=float, default=0.0,
                         help="Early stopping's parameter: minimum change loss to qualify as an improvement")
     parser.add_argument("--es_patience", type=int, default=10,
                         help="Early stopping's parameter: number of epochs with no improvement after which training will be stopped. Set to 0 to disable this technique.")
-    parser.add_argument("--train_path", type=str, default="./dataset/test.json")
+    parser.add_argument("--train_path", type=str, default="./dataset/train.json")
     parser.add_argument("--test_path", type=str, default="./dataset/test.json")
     parser.add_argument("--num_class", type=str, default=3)
     parser.add_argument("--test_interval", type=int, default=1, help="Number of epoches between testing phases")
     parser.add_argument("--saved_path", type=str, default="./models")
-    parser.add_argument("--max_token_length",type=int,default=70)
-    parser.add_argument("--max_sent_length",type=int,default=50)
+    parser.add_argument("--max_token_length",type=int,default=60)
+    parser.add_argument("--max_sent_length",type=int,default=70)
     args = parser.parse_args()
     return args
   
@@ -71,13 +73,13 @@ def train_model(opt):
     if torch.cuda.is_available():
         model.cuda()
         model.train()
-        train = Dataset(tokenizer, train_dataset, label_mapping, opt.max_token_length, opt.max_sent_length)
+        train = Dataset(tokenizer, train_dataset[:10], label_mapping, opt.max_token_length, opt.max_sent_length)
         train_dataloader = torch.utils.data.DataLoader(
             train, batch_size=batch_size, pin_memory=True, shuffle=True, drop_last= True)
 
-        test = Dataset(tokenizer, test_dataset, label_mapping, opt.max_token_length, opt.max_sent_length)
+        test = Dataset(tokenizer, test_dataset[:10], label_mapping, opt.max_token_length, opt.max_sent_length)
         test_dataloader = torch.utils.data.DataLoader(
-            train, batch_size=batch_size, shuffle=True, pin_memory=True, drop_last= True)
+            train, batch_size=batch_size, drop_last= True)
 
     num_iter_per_epoch = len(train_dataloader)
     for epoch in range(opt.num_epoches):
@@ -89,6 +91,7 @@ def train_model(opt):
 
             optimizer.zero_grad()
             logits = model(document_encode)
+            # print(logits)
             loss = criterion(logits, labels)
             loss.backward()
             optimizer.step()
@@ -116,6 +119,7 @@ def train_model(opt):
                 loss_ls.append(te_loss * num_sample)
                 te_label_ls.extend(te_label.clone().cpu())
                 te_pred_ls.append(te_predictions.clone().cpu())
+
             te_loss = sum(loss_ls) / test_dataset.__len__()
             te_pred = torch.cat(te_pred_ls, 0)
             te_label = np.array(te_label_ls)

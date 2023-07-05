@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from transformers import BertModel
 from torch import nn
-
+import torch.nn.functional as F
 
 class BertClassifier(nn.Module):
 
@@ -11,12 +11,12 @@ class BertClassifier(nn.Module):
         self.bert_model = bert_model
         self.dropout = nn.Dropout(dropout)
         self.gru = nn.GRU(self.bert_model.config.hidden_size,
-                          hidden_size, batch_first = True)
-        self.linear = nn.Linear(hidden_size, num_classes)
-        self.hidden_state = torch.zeros(1, batch_size, hidden_size)
+                          hidden_size, batch_first = True, bidirectional=True )
+        self.linear = nn.Linear(2*hidden_size, num_classes)
+        self.hidden_state = torch.zeros(2, batch_size, hidden_size)
         if torch.cuda.is_available():
             self.hidden_state = self.hidden_state.cuda()
-        self.relu = nn.ReLU()
+        # self.relu = nn.ReLU()
 
     def forward(self, input):
         batch_embedding = []
@@ -29,6 +29,5 @@ class BertClassifier(nn.Module):
         dropout_output = self.dropout(batch_embedding)
         _, h_output = self.gru(dropout_output, self.hidden_state)
         linear_output = self.linear(h_output.squeeze(0))
-        final_layer = self.relu(linear_output)
-
+        final_layer = F.softmax(linear_output,dim=1)
         return final_layer
