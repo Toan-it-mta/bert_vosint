@@ -2,6 +2,7 @@ from sklearn import metrics
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import classification_report, confusion_matrix
+import torch
 
 def get_evaluation(y_true, y_prob, list_metrics):
     # encoder = LabelEncoder()
@@ -23,3 +24,25 @@ def get_evaluation(y_true, y_prob, list_metrics):
         output['F1'] = classification_report(label_true,label_pred)
         output['confusion_matrix'] = str(confusion_matrix(y_true, y_pred))
     return output
+
+def matrix_mul(input, weight, bias=False):
+    feature_list = []
+    for feature in input:
+        if feature.ndim == 1:
+            feature = feature.view(1,-1)
+        feature = torch.mm(feature, weight)
+        if isinstance(bias, torch.nn.parameter.Parameter):
+            feature = feature + bias.expand(feature.size()[0], bias.size()[1])
+        feature = torch.tanh(feature).unsqueeze(0)
+        feature_list.append(feature)
+    return torch.cat(feature_list, 0).squeeze()
+
+def element_wise_mul(input1, input2):
+    feature_list = []
+    for feature_1, feature_2 in zip(input1, input2):
+        feature_2 = feature_2.unsqueeze(1).expand_as(feature_1)
+        feature = feature_1 * feature_2
+        feature_list.append(feature.unsqueeze(0))
+    output = torch.cat(feature_list, 0)
+
+    return torch.sum(output, 0).unsqueeze(0)
