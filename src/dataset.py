@@ -7,7 +7,7 @@ import re
 
 class Dataset(torch.utils.data.Dataset):
 
-    def __init__(self, tokenizer, dataset, label_mapping):
+    def __init__(self, tokenizer, dataset, label_mapping, max_token_length = 100, max_sent_length = 70):
         self.tokenizer = tokenizer
         self.label_mapping = label_mapping
         self.labels = [label_mapping[record['label'][1]] for record in dataset]
@@ -16,9 +16,9 @@ class Dataset(torch.utils.data.Dataset):
             txt = record['title'].strip()+record.get('description',
                                                      "").strip()+record['text'].strip()
             self.texts.append(txt)
-        self.texts_encode = self.process()
+        self.texts_encode = self.process(max_token_length, max_sent_length)
 
-    def process(self):
+    def process(self,max_token_length,max_sent_length):
         # word_set_un = set()
         texts_encode = []
         for i in tqdm(range(0, len(self.texts))):
@@ -28,17 +28,26 @@ class Dataset(torch.utils.data.Dataset):
             paragraphs = text.split("\n")
             sentences_ids = []
             sentences_mask = []
+            sentences = []
             for paragraph in paragraphs:
                 # lặp từng câu
                 for sentence in sent_tokenize(text=paragraph):
-                    sen_encoding = self.tokenizer(
-                        sentence, max_length=100, truncation=True, return_tensors="pt", padding='max_length')
-                    sentences_ids.append(sen_encoding['input_ids'].squeeze())
-                    sentences_mask.append(
-                        sen_encoding['attention_mask'].squeeze())
-            sentences_ids = torch.stack(sentences_ids)
-            sentences_mask = torch.stack(sentences_mask)
-            texts_encode.append([sentences_ids, sentences_mask])
+                    sentences.append(sentence)
+
+            # print("Do dai cau: ",len(sentences))   
+            sentences_ids = self.tokenizer(
+                sentences, 
+                max_length=max_token_length, 
+                truncation=True, return_tensors="pt", 
+                padding='max_length')['input_ids']
+            # sentences_ids.append(sen_encoding)
+            if len(sentences_ids) >= max_sent_length:
+                sentences_ids = sentences_ids[:max_sent_length]
+            else:
+                sentences_ids_padding = torch.zeros((max_sent_length - len(sentences_ids),max_token_length),dtype=torch.long)
+                sentences_ids = torch.concat((sentences_ids,sentences_ids_padding),0)
+            texts_encode.append(sentences_ids)
+        texts_encode = torch.stack(texts_encode)
         return texts_encode
 
     def preprocessing_text(self, text):

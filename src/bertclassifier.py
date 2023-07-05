@@ -11,26 +11,24 @@ class BertClassifier(nn.Module):
         self.bert_model = bert_model
         self.dropout = nn.Dropout(dropout)
         self.gru = nn.GRU(self.bert_model.config.hidden_size,
-                          hidden_size, bidirectional=True)
-        self.linear = nn.Linear(2*hidden_size, num_classes)
-        self.hidden_state = torch.zeros(2, batch_size, hidden_size)
+                          hidden_size, batch_first = True)
+        self.linear = nn.Linear(hidden_size, num_classes)
+        self.hidden_state = torch.zeros(1, batch_size, hidden_size)
+        if torch.cuda.is_available():
+            self.hidden_state = self.hidden_state.cuda()
         self.relu = nn.ReLU()
 
-    def forward(self, sentences_encode):
-        sentence_embeddings = []
-        sentences_ids = sentences_encode[0]
-        sentences_mask = sentences_encode[1]
-        for sentence_id, sentence_mask in zip(sentences_ids, sentences_mask):
-            _, sentence_pooled_output = self.bert_model(
-                input_ids=sentence_id, attention_mask=sentence_mask, return_dict=False)
-            sentence_embeddings.append(sentence_pooled_output)
-            print('oke 1')
-        sentence_embeddings = torch.stack(sentence_embeddings, dim=1)
-
-        dropout_output = self.dropout(sentence_embeddings)
-
+    def forward(self, input):
+        batch_embedding = []
+        for document_ids in input:
+            document_pooled_output = self.bert_model(input_ids=document_ids)
+            document_pooled_output = torch.mean(document_pooled_output.last_hidden_state, dim=1)
+            # document_pooled_output = document_pooled_output['pooler_output'].squeeze()
+            batch_embedding.append(document_pooled_output)
+        batch_embedding = torch.stack(batch_embedding)
+        dropout_output = self.dropout(batch_embedding)
         _, h_output = self.gru(dropout_output, self.hidden_state)
-        linear_output = self.linear(h_output)
+        linear_output = self.linear(h_output.squeeze(0))
         final_layer = self.relu(linear_output)
 
         return final_layer
