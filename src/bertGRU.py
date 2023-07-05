@@ -12,8 +12,18 @@ class BertClassifier(nn.Module):
         self.bert_model = bert_model
         self.dropout = nn.Dropout(dropout)
         self.sent_att_net = SentAttNet(hidden_size,self.bert_model.config.hidden_size,num_classes)
-        self.sent_hidden_state = torch.zeros(2, batch_size, hidden_size)
+        self.sent_hidden_size = hidden_size
+        self.batch_size = batch_size
+        self._init_hidden_state()
 
+    def _init_hidden_state(self, last_batch_size=None):
+        if last_batch_size:
+            batch_size = last_batch_size
+        else:
+            batch_size = self.batch_size
+        self.sent_hidden_state = torch.zeros(2, batch_size, self.sent_hidden_size)
+        if torch.cuda.is_available():
+            self.sent_hidden_state = self.sent_hidden_state.cuda()
       
     def forward(self, input):
         batch_embedding = []
@@ -24,6 +34,6 @@ class BertClassifier(nn.Module):
             batch_embedding.append(document_pooled_output)
         batch_embedding = torch.stack(batch_embedding)
         batch_embedding = batch_embedding.permute(1,0,2)
-        output, self.sent_hidden_state = self.sent_att_net(batch_embedding, self.sent_hidden_state)
+        output, self.sent_hidden_state = self.sent_att_net(batch_embedding,self.sent_hidden_state)
         return output
 
