@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 def get_args():
     parser = argparse.ArgumentParser(
         """Implementation of the model described in the paper: Hierarchical Attention Networks for Document Classification""")
-    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--bert_name", type=str, default="distilbert-base-uncased")
     parser.add_argument("--num_epoches", type=int, default=10)
     parser.add_argument("--lr", type=float, default=0.001)
@@ -34,8 +34,6 @@ def get_args():
     args = parser.parse_args()
     return args
   
-
-
 def train_model(opt):
       
     train_path = opt.train_path
@@ -63,6 +61,7 @@ def train_model(opt):
                     'trung_tinh': 1,
                     'tich_cuc': 2
                     }
+    
     # Tạo mô hình phân lớp document
     model = BertClassifier(bert_model, gru_hiddent_size, num_classes, batch_size)
 
@@ -72,16 +71,16 @@ def train_model(opt):
 
     if torch.cuda.is_available():
         model.cuda()
-        model.train()
-        train = Dataset(tokenizer, train_dataset[:10], label_mapping, opt.max_token_length, opt.max_sent_length)
-        train_dataloader = torch.utils.data.DataLoader(
-            train, batch_size=batch_size, pin_memory=True, shuffle=True, drop_last= True)
+    model.train()
+    train = Dataset(tokenizer, train_dataset[:4], label_mapping, opt.max_token_length, opt.max_sent_length)
+    train_dataloader = torch.utils.data.DataLoader(
+        train, batch_size=batch_size, pin_memory=True, shuffle=True, drop_last= True)
 
-        test = Dataset(tokenizer, test_dataset[:10], label_mapping, opt.max_token_length, opt.max_sent_length)
-        test_dataloader = torch.utils.data.DataLoader(
-            train, batch_size=batch_size, drop_last= True)
+    test = Dataset(tokenizer, test_dataset[:4], label_mapping, opt.max_token_length, opt.max_sent_length)
+    test_dataloader = torch.utils.data.DataLoader(
+        test, batch_size=batch_size, drop_last= True)
 
-    num_iter_per_epoch = len(train_dataloader)
+    num_iter_per_epoch = len(train_dataset)
     for epoch in range(opt.num_epoches):
         for iter, (document_encode, labels) in enumerate(train_dataloader):
             if torch.cuda.is_available():

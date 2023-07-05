@@ -28,6 +28,13 @@ class BertClassifier(nn.Module):
         batch_embedding = torch.stack(batch_embedding)
         dropout_output = self.dropout(batch_embedding)
         _, h_output = self.gru(dropout_output, self.hidden_state)
-        linear_output = self.linear(h_output.squeeze(0))
+        h_output = h_output.permute(1,0,2)
+
+        print("h_output: ",h_output.size())
+        output = []
+        for batch in h_output:
+            output.append(torch.concat((batch[0],batch[1]),dim=0))
+        output = torch.stack(output)
+        linear_output = self.linear(output.squeeze(0))
         final_layer = F.softmax(linear_output,dim=1)
         return final_layer
