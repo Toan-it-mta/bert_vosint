@@ -7,7 +7,7 @@ import re
 
 class Dataset(torch.utils.data.Dataset):
 
-    def __init__(self, tokenizer, dataset, label_mapping, max_token_length = 100, max_sent_length = 70):
+    def __init__(self, tokenizer, dataset, label_mapping, max_token_length = 512, max_sent_length = 70):
         self.tokenizer = tokenizer
         self.label_mapping = label_mapping
         self.labels = [label_mapping[record['label'][1]] for record in dataset]
@@ -34,7 +34,6 @@ class Dataset(torch.utils.data.Dataset):
                 for sentence in sent_tokenize(text=paragraph):
                     sentences.append(sentence)
 
-            # print("Do dai cau: ",len(sentences))   
             sentences_token = self.tokenizer(
                 sentences, 
                 max_length=max_token_length, 
@@ -47,10 +46,12 @@ class Dataset(torch.utils.data.Dataset):
                 sentences_ids = sentences_ids[:max_sent_length]
                 sentences_mask = sentences_mask[:max_sent_length]
             else:
+                
                 sentences_ids_padding = torch.zeros((max_sent_length - len(sentences_ids),max_token_length),dtype=torch.long)
                 sentences_ids = torch.concat((sentences_ids,sentences_ids_padding),0)
-                sentences_mask_padding = torch.zeros((max_sent_length - len(sentences_ids),max_token_length),dtype=torch.long)
-                sentences_mask = torch.concat((sentences_ids,sentences_mask_padding),0)
+                sentences_mask_padding = torch.zeros((max_sent_length - len(sentences_mask),max_token_length),dtype=torch.long)
+                sentences_mask = torch.concat((sentences_mask,sentences_mask_padding),0)
+            assert sentences_ids.size() == sentences_mask.size()
             sentences_token['input_ids'] = sentences_ids
             sentences_token['attention_mask'] = sentences_mask
             texts_token.append(sentences_token)
@@ -74,7 +75,8 @@ class Dataset(torch.utils.data.Dataset):
         return self.texts_encode[idx]
 
     def __getitem__(self, idx):
-        batch_texts = self.get_batch_texts(idx)
+        batch_ids = self.get_batch_texts(idx)['input_ids']
+        batch_mask = self.get_batch_texts(idx)['attention_mask']
         batch_y = self.get_batch_labels(idx)
 
-        return batch_texts, batch_y
+        return batch_ids, batch_mask, batch_y

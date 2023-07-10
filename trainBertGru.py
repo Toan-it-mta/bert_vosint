@@ -62,7 +62,7 @@ def train_model(opt):
     
     # Tạo mô hình phân lớp document
     model = BertClassifier(bert_model, gru_hiddent_size, num_classes, batch_size)
-
+    print(model)
     # Định nghĩa hàm mất mát và tối ưu hóa
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
