@@ -42,11 +42,12 @@ class Dataset(torch.utils.data.Dataset):
             
             sentences_ids = sentences_token['input_ids']
             sentences_mask = sentences_token['attention_mask']
+            num_sent = len(sentences_ids)
             if len(sentences_ids) >= max_sent_length:
                 sentences_ids = sentences_ids[:max_sent_length]
                 sentences_mask = sentences_mask[:max_sent_length]
-            else:
-                
+                num_sent = max_sent_length
+            else:  
                 sentences_ids_padding = torch.zeros((max_sent_length - len(sentences_ids),max_token_length),dtype=torch.long)
                 sentences_ids = torch.concat((sentences_ids,sentences_ids_padding),0)
                 sentences_mask_padding = torch.zeros((max_sent_length - len(sentences_mask),max_token_length),dtype=torch.long)
@@ -54,6 +55,8 @@ class Dataset(torch.utils.data.Dataset):
             assert sentences_ids.size() == sentences_mask.size()
             sentences_token['input_ids'] = sentences_ids
             sentences_token['attention_mask'] = sentences_mask
+            sentences_token['num_sent'] = num_sent
+            print(num_sent)
             texts_token.append(sentences_token)
         return texts_token
 
@@ -77,6 +80,7 @@ class Dataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         batch_ids = self.get_batch_texts(idx)['input_ids']
         batch_mask = self.get_batch_texts(idx)['attention_mask']
+        num_sent = self.get_batch_texts(idx)['num_sent']
         batch_y = self.get_batch_labels(idx)
 
-        return batch_ids, batch_mask, batch_y
+        return batch_ids, batch_mask, num_sent, batch_y

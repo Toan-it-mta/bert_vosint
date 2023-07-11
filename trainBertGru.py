@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 def get_args():
     parser = argparse.ArgumentParser(
         """Implementation of the model described in the paper: Hierarchical Attention Networks for Document Classification""")
-    parser.add_argument("--batch_size", type=int, default=4)
+    parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--bert_name", type=str, default="distilbert-base-uncased")
     parser.add_argument("--num_epoches", type=int, default=10)
     parser.add_argument("--lr", type=float, default=0.001)
@@ -30,7 +30,7 @@ def get_args():
     parser.add_argument("--test_interval", type=int, default=1, help="Number of epoches between testing phases")
     parser.add_argument("--saved_path", type=str, default="./models")
     parser.add_argument("--max_token_length",type=int,default=100)
-    parser.add_argument("--max_sent_length",type=int,default=70)
+    parser.add_argument("--max_sent_length",type=int,default=50)
     args = parser.parse_args()
     return args
   
