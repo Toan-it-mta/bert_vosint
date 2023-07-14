@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 warnings.filterwarnings("ignore")
 
-MODEL_PATH ="models/0.7395_best_model.pt"
+MODEL_PATH ="models/0.76_best_model.pt"
 BERT_NAME ="NlpHUST/vibert4news-base-cased"
 tokenizer = BertTokenizer.from_pretrained(BERT_NAME)
 bert_model = BertModel.from_pretrained(BERT_NAME)
@@ -18,7 +18,7 @@ sentiment_model = BertClassifier(bert_model,num_classes=3)
 sentiment_model.load_state_dict(torch.load(MODEL_PATH,map_location=torch.device("cpu")))
 sentiment_model.eval()
 
-MAX_SENT_LENGTH = 50
+MAX_SENT_LENGTH = 100
 MAX_WORD_LENGTH = 100
 LABEL_MAPPING = {0: "tieu_cuc",
                     1: "trung_tinh",
@@ -79,34 +79,20 @@ def predict(text:str):
     return ["NO",label_pred]
 
 if __name__ == "__main__":
-    # file_input = "/media/nlp_team/nlpteam/toan/v_osint_topic_sentiment/SentimentTest/VnNewsConfirm.json"
-    # file_output = "/media/nlp_team/nlpteam/toan/v_osint_topic_sentiment/SentimentTest/VnNewsConfirm_output_padding.json"
-    # with open(file_input,'r',encoding='utf-8') as f:
-    #     dataset = json.load(f)
+    file_input = "/media/nlp_team/nlpteam/toan/V_OSINT_Sentiment_Analysis/dataset/SentimentTest/VnNewsConfirm.json"
+    file_output = "/media/nlp_team/nlpteam/toan/V_OSINT_Sentiment_Analysis/dataset/SentimentTest/VnNewsConfirm_output_0.76_unpadding.json"
+    with open(file_input,'r',encoding='utf-8') as f:
+        dataset = json.load(f)
 
-    # for record in tqdm(dataset):
-    #     txt = record.get('title',"")+'\n'
-    #     txt += record.get('description',"")+'\n'
-    #     txt += record.get('text')
-    #     record['predict'] = predict(txt)
+    for record in tqdm(dataset):
+        txt = record.get('title',"")+'\n'
+        txt += record.get('description',"")+'\n'
+        txt += record.get('text')
+        record['predict'] = predict(txt)
 
-    # with open(file_output,'w',encoding='utf-8') as f:
-    #     dataset = json.dump(dataset,f,ensure_ascii=False)
-    text = """Nhà máy chở điện' di động trên biển
-NHẬT BẢNTàu Battery Tanker X trang bị 96 module pin lithium sắt phosphate, có thể chở 241 MWh điện sạch với tầm hoạt động 300 km.
-
-Mô phỏng tàu chở điện Battery Tanker X. Ảnh: PowerX
-Mô phỏng tàu chở điện Battery Tanker X. Ảnh: PowerX
-
-Công ty Nhật Bản PowerX đang phát triển "nhà máy điện di động" dưới dạng một tàu pin dài 140 m, vận chuyển 241 MWh năng lượng tái tạo qua khoảng cách ngắn trên biển, New Atlas hôm 30/5 đưa tin. Năng lượng tái tạo thường được sản xuất ở nơi cách khu vực cần điện khá xa. Do đó, tàu thủy trang bị hàng loạt bộ pin sẽ giúp chở điện đến đích một cách dễ dàng.
-
-PowerX cho biết, Nhật Bản có biển sâu bao quanh và dễ xảy ra động đất, gây khó khăn khi sử dụng cáp truyền tải điện. Bên cạnh đó, giải pháp vận chuyển điện bằng tàu thủy giúp khắc phục các vấn đề như thời gian chết (khi cáp biển gặp trục trặc và cần sửa chữa) kéo dài, chi phí cho việc kết nối điện áp siêu cao và trạm biến áp lớn.
-
-Thiết kế của nguyên mẫu tàu chở điện mang tên Battery Tanker X, được PowerX hé lộ tại Triển lãm Hàng hải Quốc tế Bariship diễn ra ở thành phố Imabari, tỉnh Ehime, Nhật Bản, hôm 29/5. Nguyên mẫu này trang bị 96 module pin lithium sắt phosphate với kích thước tương đương container. Battery Tanker X chạy bằng điện với tầm hoạt động tối đa dự kiến là 300 km. Tàu chở điện cũng sẽ trang bị các hệ thống kiểm soát khí thải và dập lửa.
-
-PowerX cũng đang phát triển một phiên bản khác mang tên Power Ark với kích thước lớn hơn nhiều so với Battery Tanker X. Power Ark dự kiến trang bị lượng lithium gấp 8 lần, nghĩa là chở được tới 2 GWh điện - đủ cho khoảng 70.000 gia đình trung bình ở Mỹ dùng cả ngày.
-
-PowerX đang thành lập một công ty con mới mang tên Ocean Power Grid nhằm thương mại hóa công nghệ mới. Với việc hoàn tất thiết kế chi tiết của nguyên mẫu, công ty đặt mục tiêu chế tạo Battery Tanker X vào năm 2025. Việc thử nghiệm thực địa trong nước và quốc tế dự kiến bắt đầu vào năm 2026."""
-    predict_out = predict(text)
-    print(predict_out)
+    with open(file_output,'w',encoding='utf-8') as f:
+        dataset = json.dump(dataset,f,ensure_ascii=False)
+    # text = """Người đứng đầu Bộ Quốc phòng tuyên bố rằng một thoả thuận hợp tác về mua sắm quốc phòng sẽ được ký với Bộ trưởng Quốc phòng Hoa Kỳ Lloyd Austin trong cuộc họp của họ vào thứ Sáu."""
+    # predict_out = predict(text)
+    # print(predict_out)
 
